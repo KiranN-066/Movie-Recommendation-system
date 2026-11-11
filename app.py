@@ -89,12 +89,9 @@ vectorizer, tfidf_matrix = build_model()
 
 def recommend_movies(movie_name, number=10):
 
+    # Match the complete movie title
     matches = movies[
-        movies["clean_title"].str.contains(
-            re.escape(movie_name),
-            case=False,
-            na=False
-        )
+        movies["title"].str.casefold() == movie_name.casefold()
     ]
 
     if matches.empty:
@@ -102,6 +99,7 @@ def recommend_movies(movie_name, number=10):
 
     movie_index = matches.index[0]
 
+    # Calculate similarity
     scores = cosine_similarity(
         tfidf_matrix[movie_index],
         tfidf_matrix
@@ -112,6 +110,7 @@ def recommend_movies(movie_name, number=10):
     recommendations = []
 
     for index in similar_indices:
+
         if index == movie_index:
             continue
 
@@ -126,79 +125,4 @@ def recommend_movies(movie_name, number=10):
 
     return movies.iloc[movie_index]["title"], recommendations
 
-# -------------------------------
-# 6. WEBSITE HEADER
-# -------------------------------
 
-st.markdown(
-    "<h1>🎬 Movie Recommendation System</h1>",
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    "<p style='text-align:center;'>"
-    "Discover movies similar to your favourites!"
-    "</p>",
-    unsafe_allow_html=True
-)
-
-st.divider()
-
-# -------------------------------
-# 7. MOVIE SEARCH
-# -------------------------------
-
-st.subheader("🔍 Find Your Next Movie")
-
-selected_movie = st.selectbox(
-    "Search or select a movie",
-    options=movies["title"].tolist()
-)
-
-number = st.slider(
-    "Number of recommendations",
-    min_value=5,
-    max_value=10,
-    value=10
-)
-
-# -------------------------------
-# 8. RECOMMENDATION BUTTON
-# -------------------------------
-
-if st.button("✨ Recommend Movies", use_container_width=True):
-
-    selected_title, results = recommend_movies(
-        selected_movie,
-        number
-    )
-
-    if not results:
-        st.error("No recommendations found.")
-
-    else:
-        st.success(f"Movies similar to {selected_title}")
-
-        st.subheader("🍿 Recommended Movies")
-
-        for i, movie in enumerate(results, 1):
-
-            st.markdown(
-                f"""
-                <div class="movie-card">
-                    <h3>{i}. {movie['title']}</h3>
-                    <p>🎭 Genres: {movie['genres']}</p>
-                    <p>⭐ Similarity Score: {movie['score']}</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-st.divider()
-
-st.markdown(
-    "<p style='text-align:center;'>"
-    "Built with Python, Machine Learning and Streamlit ❤️"
-    "</p>",
-    unsafe_allow_html=True
-)
